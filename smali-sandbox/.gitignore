@@ -7,9 +7,11 @@ corpus/
 outputs/
 
 # Local-only documents — scratch notes and planning
-2026-05-10-smali-extractor-design.md
-phase4-androguard.md
+history_docs/
 roadmap.md
+DISCOVERY.md
+
+
 
 # Tests and validation scripts — sandbox-only, not part of the port
 tests/
