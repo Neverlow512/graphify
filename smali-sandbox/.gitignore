@@ -1,0 +1,27 @@
+# Disassembled APK corpus — large, reproducible from source APKs
+corpus/apk-sample/
+corpus/jesusfreke/
+corpus/
+
+# Parser output runs and Androguard comparisons — generated, not source
+outputs/
+
+# Local-only documents — scratch notes and planning
+2026-05-10-smali-extractor-design.md
+phase4-androguard.md
+roadmap.md
+
+# Tests and validation scripts — sandbox-only, not part of the port
+tests/
+androguard_extract.py
+androguard_compare.py
+check_invoke_coverage.py
+run_parser.py
+requirements.txt
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
