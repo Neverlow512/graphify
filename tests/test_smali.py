@@ -36,25 +36,25 @@ def test_smali_detect_extension_registered():
 def test_smali_finds_class():
     from graphify.extract import extract_smali
     r = extract_smali(FIXTURES / "sample.smali")
-    assert any("MainActivity" in l for l in _labels(r))
+    assert any("MainActivity" in lbl for lbl in _labels(r))
 
 
 def test_smali_finds_methods():
     from graphify.extract import extract_smali
     r = extract_smali(FIXTURES / "sample.smali")
     labels = _labels(r)
-    assert any("onClick" in l for l in labels)
-    assert any("getCount" in l for l in labels)
-    assert any("logEvent" in l for l in labels)
-    assert any("scheduleWork" in l for l in labels)
+    assert any("onClick" in lbl for lbl in labels)
+    assert any("getCount" in lbl for lbl in labels)
+    assert any("logEvent" in lbl for lbl in labels)
+    assert any("scheduleWork" in lbl for lbl in labels)
 
 
 def test_smali_finds_fields():
     from graphify.extract import extract_smali
     r = extract_smali(FIXTURES / "sample.smali")
     labels = _labels(r)
-    assert any("count" in l for l in labels)
-    assert any("TAG" in l for l in labels)
+    assert any("count" in lbl for lbl in labels)
+    assert any("TAG" in lbl for lbl in labels)
 
 
 def test_smali_inherits_edge():
@@ -119,3 +119,12 @@ def test_smali_file_type_code():
     r = extract_smali(FIXTURES / "sample.smali")
     for n in r["nodes"]:
         assert n.get("file_type") == "code", f"Expected file_type=code: {n}"
+        kind = n.get("kind")
+        assert kind in ("class", "method", "field"), f"Expected kind class|method|field: {n}"
+
+    by_label = {n["label"]: n for n in r["nodes"]}
+    assert by_label["com.example.MainActivity"]["kind"] == "class"
+    assert by_label["com.example.MainActivity.onClick()"]["kind"] == "method"
+    assert by_label["com.example.MainActivity.count"]["kind"] == "field"
+    assert by_label["com.example.BaseActivity"]["kind"] == "class"
+    assert by_label["com.example.WorkManager.enqueue()"]["kind"] == "method"

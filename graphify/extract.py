@@ -5473,7 +5473,7 @@ _smali_SPUT_RE: re.Pattern[str] = re.compile(
 )
 
 _smali_EdgeFn = Callable[[str, str, str, int, str | None], None]
-_smali_StubFn = Callable[[str, str], None]
+_smali_StubFn = Callable[[str, str, str], None]
 
 
 def _smali_descriptor_to_label(descriptor: str) -> str:
@@ -5507,6 +5507,7 @@ def extract_smali(path: Path) -> dict:
         nid: str,
         label: str,
         line: int,
+        kind: str,
         source_file: str = str_path,
     ) -> None:
         if nid not in seen_ids:
@@ -5514,17 +5515,19 @@ def extract_smali(path: Path) -> dict:
             nodes.append({
                 "id": nid,
                 "label": label,
+                "kind": kind,
                 "file_type": "code",
                 "source_file": source_file,
                 "source_location": f"L{line}",
             })
 
-    def _stub_node(nid: str, label: str) -> None:
+    def _stub_node(nid: str, label: str, kind: str) -> None:
         if nid not in seen_ids:
             seen_ids.add(nid)
             nodes.append({
                 "id": nid,
                 "label": label,
+                "kind": kind,
                 "file_type": "code",
                 "source_file": "",
                 "source_location": "",
@@ -5594,13 +5597,13 @@ def extract_smali(path: Path) -> dict:
             label = _smali_descriptor_to_label(descriptor)
             nid = _make_id(label)
             current_class_nid = nid
-            _add_node(nid, label, lineno)
+            _add_node(nid, label, lineno, "class")
 
             outer_desc = _smali_outer_descriptor(descriptor)
             if outer_desc:
                 outer_label = _smali_descriptor_to_label(outer_desc)
                 outer_nid = _make_id(outer_label)
-                _stub_node(outer_nid, outer_label)
+                _stub_node(outer_nid, outer_label, "class")
                 _add_edge(outer_nid, nid, "contains", lineno)
             continue
 
@@ -5609,7 +5612,7 @@ def extract_smali(path: Path) -> dict:
             descriptor = m.group(1)
             label = _smali_descriptor_to_label(descriptor)
             tgt_nid = _make_id(label)
-            _stub_node(tgt_nid, label)
+            _stub_node(tgt_nid, label, "class")
             _add_edge(current_class_nid, tgt_nid, "inherits", lineno)
             continue
 
@@ -5618,7 +5621,7 @@ def extract_smali(path: Path) -> dict:
             descriptor = m.group(1)
             label = _smali_descriptor_to_label(descriptor)
             tgt_nid = _make_id(label)
-            _stub_node(tgt_nid, label)
+            _stub_node(tgt_nid, label, "class")
             _add_edge(current_class_nid, tgt_nid, "implements", lineno)
             continue
 
@@ -5628,7 +5631,7 @@ def extract_smali(path: Path) -> dict:
             class_label = _smali_descriptor_to_label(current_class_descriptor)
             field_label = f"{class_label}.{field_name}"
             field_nid = _make_id(class_label, field_name)
-            _add_node(field_nid, field_label, lineno)
+            _add_node(field_nid, field_label, lineno, "field")
             _add_edge(current_class_nid, field_nid, "contains", lineno)
             continue
 
@@ -5639,7 +5642,7 @@ def extract_smali(path: Path) -> dict:
             method_label = f"{class_label}.{method_name}()"
             ns = "b" if "<" in method_name and ">" in method_name else "m"
             method_nid = _make_id(class_label, ns, method_name)
-            _add_node(method_nid, method_label, lineno)
+            _add_node(method_nid, method_label, lineno, "method")
             _add_edge(current_class_nid, method_nid, "contains", lineno)
             current_method_nid = method_nid
             collecting_body = []
@@ -5669,7 +5672,7 @@ def _smali_process_invoke(
         ns = "b" if "<" in mname and ">" in mname else "m"
         tgt_nid = _make_id(class_label, ns, mname)
         method_label = f"{class_label}.{mname}()"
-        stub_node(tgt_nid, method_label)
+        stub_node(tgt_nid, method_label, "method")
         add_edge(method_nid, tgt_nid, "calls", lineno, "call")
         return
 
@@ -5681,7 +5684,7 @@ def _smali_process_invoke(
         ns = "b" if "<" in mname and ">" in mname else "m"
         tgt_nid = _make_id(class_label, ns, mname)
         method_label = f"{class_label}.{mname}()"
-        stub_node(tgt_nid, method_label)
+        stub_node(tgt_nid, method_label, "method")
         add_edge(method_nid, tgt_nid, "calls", lineno, "call")
         return
 
@@ -5690,7 +5693,7 @@ def _smali_process_invoke(
     if m:
         call_site_ref = m.group(1)
         tgt_nid = _make_id("call_site", call_site_ref)
-        stub_node(tgt_nid, call_site_ref)
+        stub_node(tgt_nid, call_site_ref, "method")
         add_edge(method_nid, tgt_nid, "calls", lineno, "call")
 
 
@@ -5707,7 +5710,7 @@ def _smali_process_field_access(
         field_name = m.group(2)
         class_label = _smali_descriptor_to_label(class_desc)
         field_nid = _make_id(class_label, field_name)
-        stub_node(field_nid, f"{class_label}.{field_name}")
+        stub_node(field_nid, f"{class_label}.{field_name}", "field")
         add_edge(method_nid, field_nid, "reads", lineno, "read")
         return
 
@@ -5717,7 +5720,7 @@ def _smali_process_field_access(
         field_name = m.group(2)
         class_label = _smali_descriptor_to_label(class_desc)
         field_nid = _make_id(class_label, field_name)
-        stub_node(field_nid, f"{class_label}.{field_name}")
+        stub_node(field_nid, f"{class_label}.{field_name}", "field")
         add_edge(method_nid, field_nid, "reads", lineno, "read")
         return
 
@@ -5727,7 +5730,7 @@ def _smali_process_field_access(
         field_name = m.group(2)
         class_label = _smali_descriptor_to_label(class_desc)
         field_nid = _make_id(class_label, field_name)
-        stub_node(field_nid, f"{class_label}.{field_name}")
+        stub_node(field_nid, f"{class_label}.{field_name}", "field")
         add_edge(method_nid, field_nid, "writes", lineno, "write")
         return
 
@@ -5737,7 +5740,7 @@ def _smali_process_field_access(
         field_name = m.group(2)
         class_label = _smali_descriptor_to_label(class_desc)
         field_nid = _make_id(class_label, field_name)
-        stub_node(field_nid, f"{class_label}.{field_name}")
+        stub_node(field_nid, f"{class_label}.{field_name}", "field")
         add_edge(method_nid, field_nid, "writes", lineno, "write")
 
 
