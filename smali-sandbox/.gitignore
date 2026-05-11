@@ -6,6 +6,9 @@ corpus/
 # Parser output runs and Androguard comparisons — generated, not source
 outputs/
 
+# Java vs smali comparison experiment — generated, not source
+comparison/
+
 # Local-only documents — scratch notes and planning
 history_docs/
 roadmap.md
