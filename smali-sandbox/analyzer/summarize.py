@@ -15,17 +15,14 @@ def _is_stub(node: dict) -> bool:
 
 
 def _node_kind(node: dict) -> str:
+    # Use the authoritative kind field set by the extractor when available.
+    kind = node.get("kind")
+    if kind in ("class", "method", "field"):
+        return kind
+    # Fallback heuristic for nodes produced before the kind field was added.
     label: str = node.get("label", "")
     if label.endswith("()"):
         return "method"
-    # Field labels are always "{class_label}.{field_name}" where field_name has no dots
-    # or parens. Class labels may contain dots from package separators.
-    # Known limitation: single-char obfuscated class names (e.g. "a.b") may be
-    # misclassified as fields since their tail also starts lowercase.
-    # Known limitation: PascalCase field names (e.g. Handler, Builder, Creator) cannot
-    # be distinguished from class names by label alone. Only CONSTANT_CASE (TAG, MAX_SIZE)
-    # and lowercase/special-start names are reliably classified as fields.
-    # Field/class counts in summary.json are approximate for PascalCase member names.
     if "." in label:
         tail = label.rsplit(".", 1)[1]
         if "." not in tail and "(" not in tail:

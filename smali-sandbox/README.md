@@ -171,7 +171,7 @@ ______________________________________________________________________
 | 2 — Reference corpus          | **Complete** | 128 files, 7 bugs found and fixed, regression tests added                      |
 | 3 — Real APK benchmark        | **Complete** | 24,286 files across 3 apps, zero errors, zero collisions, 100% invoke coverage |
 | 4 — Androguard accuracy check | **Complete** | 99.87% match on extractable `calls` edges for AntennaPod (Java)                |
-| 5 — Port into graphify        | Pending      | —                                                                              |
+| 5 — Port into graphify        | **Complete** | 15 smali tests pass (262 total), e2e verified on AntennaPod corpus             |
 
 ______________________________________________________________________
 
